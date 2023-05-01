@@ -30,34 +30,36 @@ export class RegionBuffer {
   private savedEntities = false;
   private imported = "";
 
-  private refCount = 1;
-
   constructor(isAccurate = false) {
     this.isAccurate = isAccurate;
     this.id = "wedit:buffer_" + generateId();
     contentLog.debug("creating structure", this.id);
   }
 
-  public save(start: Vector3, end: Vector3, dim: Dimension, options: StructureSaveOptions = {}, blocks: blockList = "all") {
+  public async save(start: Vector3, end: Vector3, dim: Dimension, options: StructureSaveOptions = {}, blocks: blockList = "all") {
     const save = this.saveProgressive(start, end, dim, options, blocks);
-    let val: IteratorResult<number, boolean>;
+    let val: IteratorResult<number | Promise<unknown>, boolean>;
     let lastPromise: unknown;
     while (!val?.done) {
       val = save.next(lastPromise);
       lastPromise = undefined;
+      if (val.value instanceof Promise) {
+        lastPromise = await val.value;
+      }
     }
     return val.value;
   }
 
-  public* saveProgressive(start: Vector3, end: Vector3, dim: Dimension, options: StructureSaveOptions = {}, blocks: blockList = "all"): Generator<number, boolean> {
+  public* saveProgressive(start: Vector3, end: Vector3, dim: Dimension, options: StructureSaveOptions = {}, blocks: blockList = "all"): Generator<number | Promise<unknown>, boolean> {
     if (this.isAccurate) {
       const min = Vector.min(start, end);
+      const promises: Promise<unknown>[] = [];
       const iterate = (blockLoc: Vector3) => {
         const relLoc = Vector.sub(blockLoc, min).floor();
         const block = dim.getBlock(blockLoc);
         if (blockHasNBTData(block)) {
           const id = this.id + "_" + this.subId++;
-          this.saveBlockAsStruct(id, blockLoc, dim);
+          promises.push(this.saveBlockAsStruct(id, blockLoc, dim));
           this.blocks.set(locToString(relLoc), [id, block.permutation.clone()]);
         } else {
           this.blocks.set(locToString(relLoc), block.permutation.clone());
@@ -96,13 +98,16 @@ export class RegionBuffer {
       }
       this.blockCount = count;
       if (options.includeEntities) {
-        Server.structure.save(this.id, start, end, dim, {
+        promises.push(Server.structure.save(this.id, start, end, dim, {
           includeBlocks: false,
           includeEntities: true
-        });
+        }));
+      }
+      if (promises.length) {
+        yield Promise.all(promises);
       }
     } else {
-      if (Server.structure.save(this.id, start, end, dim, options)) {
+      if ((yield Server.structure.save(this.id, start, end, dim, options)) as boolean) {
         return true;
       }
       this.blockCount = regionVolume(start, end);
@@ -113,20 +118,24 @@ export class RegionBuffer {
     return false;
   }
 
-  public load(loc: Vector3, dim: Dimension, options?: RegionLoadOptions) {
+  public async load(loc: Vector3, dim: Dimension, options?: RegionLoadOptions) {
     const load = this.loadProgressive(loc, dim, options);
-    let val: IteratorResult<number, void>;
+    let val: IteratorResult<number | Promise<unknown>, void>;
     let lastPromise: unknown;
     while (!val?.done) {
       val = load.next(lastPromise);
       lastPromise = undefined;
+      if (val.value instanceof Promise) {
+        lastPromise = await val.value;
+      }
     }
     return val.value;
   }
 
-  public* loadProgressive(loc: Vector3, dim: Dimension, options: RegionLoadOptions = {}): Generator<number, void> {
+  public* loadProgressive(loc: Vector3, dim: Dimension, options: RegionLoadOptions = {}): Generator<number | Promise<unknown>, void> {
     const rotFlip: [Vector, Vector] = [options.rotation ?? Vector.ZERO, options.flip ?? Vector.ONE];
     if (this.isAccurate) {
+      const promises: Promise<unknown>[] = [];
       const bounds = regionTransformedBounds(
         Vector.ZERO,
         Vector.sub(this.size, [1,1,1]).floor(),
@@ -150,7 +159,6 @@ export class RegionBuffer {
           const weirdoDir = block.getState("weirdo_direction") as number;
           const torchFacingDir = block.getState("torch_facing_direction") as string;
           const leverDir = block.getState("lever_direction") as string;
-          const cardinalDir = block.getState("minecraft:cardinal_direction") as string;
 
           const withProperties = (properties: Record<string, string | number | boolean>) => {
             for (const prop in properties) {
@@ -178,9 +186,6 @@ export class RegionBuffer {
             const mapping = blockName.includes("powered_repeater") || blockName.includes("powered_comparator") ? mappings.redstoneMap : mappings.directionMap;
             const state = this.transformMapping(mapping, direction, ...rotFlip);
             block = block.withState("direction", parseInt(state));
-          } else if (cardinalDir != null) {
-            const state = this.transformMapping(mappings.cardinalDirectionMap, cardinalDir, ...rotFlip);
-            block = block.withState("minecraft:cardinal_direction", state);
           } else if (groundSignDir != null) {
             const state = this.transformMapping(mappings.groundSignDirectionMap, groundSignDir, ...rotFlip);
             block = block.withState("ground_sign_direction", parseInt(state));
@@ -219,8 +224,9 @@ export class RegionBuffer {
         if (block instanceof BlockPermutation) {
           oldBlock.setPermutation(transform(block));
         } else {
-          this.loadBlockFromStruct(block[0], blockLoc, dim);
-          oldBlock.setPermutation(transform(block[1]));
+          promises.push(this.loadBlockFromStruct(block[0], blockLoc, dim).then(() => {
+            oldBlock.setPermutation(transform(block[1]));
+          }));
         }
         if (iterateChunk()) yield i / this.blocks.size;
         i++;
@@ -239,7 +245,7 @@ export class RegionBuffer {
             entityFacing = Vector.from(entityFacing).sub(loc)
               .rotateY(rotFlip[0].y).rotateX(rotFlip[0].x).rotateZ(rotFlip[0].z)
               .mul(rotFlip[1]).sub(bounds[0]).add(loc);
-
+            
             ev.entity.teleport(entityLoc, {
               dimension: dim,
               facingLocation: entityFacing
@@ -247,10 +253,18 @@ export class RegionBuffer {
           }
         };
 
-        Server.on("entityCreate", onEntityload);
-        Server.structure.load(this.id, loc, dim);
-        Server.off("entityCreate", onEntityload);
+        Server.flushCommands().then(() => {
+          Server.on("entityCreate", onEntityload);
+          Server.structure.load(this.id, loc, dim).then(() => {
+            Server.off("entityCreate", onEntityload);
+          });
+        });
+
+        if (promises.length) {
+          yield Promise.all(promises);
+        }
       }
+
     } else {
       const loadOptions: StructureLoadOptions = {
         rotation: rotFlip[0].y,
@@ -260,7 +274,8 @@ export class RegionBuffer {
       if (options.flip?.x == -1) loadOptions.flip += "z";
       if (loadOptions.flip as string == "nonez") loadOptions.flip = "z";
       if (this.imported) loadOptions.importedSize = Vector.from(this.size);
-      Server.structure.load(this.imported || this.id, loc, dim, loadOptions);
+      yield 1;
+      yield Server.structure.load(this.imported || this.id, loc, dim, loadOptions);
     }
   }
 
@@ -294,7 +309,7 @@ export class RegionBuffer {
     this.blockCount = this.blocks.size;
   }
 
-  public* create(start: Vector3, end: Vector3, func: (loc: Vector3) => Block | BlockPermutation): Generator<number, null> {
+  public* create(start: Vector3, end: Vector3, func: (loc: Vector3) => Block | BlockPermutation): Generator<number | Promise<unknown>, null> {
     if (!this.isAccurate || !this.size.equals(Vector.ZERO)) {
       return;
     }
@@ -304,18 +319,22 @@ export class RegionBuffer {
     const volume = regionVolume(...region);
 
     let i = 0;
+    const promises = [];
     for (const coord of regionIterateBlocks(...region)) {
       const block = func(coord);
       if (block) {
         if (block instanceof Block && blockHasNBTData(block)) {
           const id = this.id + "_" + this.subId++;
-          this.saveBlockAsStruct(id, block.location, block.dimension);
+          promises.push(this.saveBlockAsStruct(id, block.location, block.dimension));
           this.blocks.set(locToString(coord), [id, block.permutation.clone()]);
         } else {
           this.blocks.set(locToString(coord), block instanceof Block ? block.permutation.clone() : block);
         }
       }
       yield ++i / volume;
+    }
+    if (promises.length) {
+      yield Promise.all(promises);
     }
     this.blockCount = this.blocks.size;
   }
@@ -346,7 +365,7 @@ export class RegionBuffer {
   }
 
   public setBlock(loc: Vector3, block: Block | BlockPermutation, options?: StructureSaveOptions & {loc?: Vector, dim?: Dimension}) {
-    let error: boolean;
+    let error: Promise<boolean>;
     const key = locToString(loc);
 
     if (this.blocks.has(key) && Array.isArray(this.blocks.get(key))) {
@@ -368,7 +387,7 @@ export class RegionBuffer {
     }
     this.size = Vector.max(this.size, Vector.from(loc).add(1)).floor();
     this.blockCount = this.blocks.size;
-    return error ?? false;
+    return error ?? Promise.resolve(false);
   }
 
   public import(structure: string, size: Vector3) {
@@ -377,14 +396,27 @@ export class RegionBuffer {
     this.blockCount = size.x * size.y * size.z;
   }
 
-  public ref() {
-    this.refCount++;
-  }
-
-  public deref() {
-    if (--this.refCount < 1) {
-      this.delete();
-    }
+  public delete() {
+    const thread = new Thread();
+    thread.start(function* (self: RegionBuffer) {
+      if (self.isAccurate) {
+        const promises = [];
+        for (const block of self.blocks.values()) {
+          if (!(block instanceof BlockPermutation)) {
+            promises.push(self.deleteBlockStruct(block[0]));
+            yield;
+          }
+        }
+        if (promises.length) {
+          yield Promise.all(promises);
+        }
+        self.blocks.clear();
+      }
+      self.size = Vector.ZERO;
+      self.blockCount = 0;
+      yield Server.structure.delete(self.id);
+      contentLog.debug("deleted structure", self.id);
+    }, this);
   }
 
   private transformMapping(mapping: {[key: string|number]: Vector | [number, number, number]}, state: string|number, rotate: Vector, flip: Vector): string {
@@ -420,30 +452,7 @@ export class RegionBuffer {
   }
 
   private deleteBlockStruct(id: string) {
-    Server.queueCommand(`structure delete ${id}`);
-  }
-
-  private delete() {
-    const thread = new Thread();
-    thread.start(function* (self: RegionBuffer) {
-      if (self.isAccurate) {
-        const promises = [];
-        for (const block of self.blocks.values()) {
-          if (!(block instanceof BlockPermutation)) {
-            promises.push(self.deleteBlockStruct(block[0]));
-            yield;
-          }
-        }
-        if (promises.length) {
-          yield Promise.all(promises);
-        }
-        self.blocks.clear();
-      }
-      self.size = Vector.ZERO;
-      self.blockCount = 0;
-      yield Server.structure.delete(self.id);
-      contentLog.debug("deleted structure", self.id);
-    }, this);
+    return Server.runCommand(`structure load ${id}`);
   }
 }
 
@@ -471,12 +480,6 @@ const mappings = {
     3: new Vector( 0, 0, 1),
     4: new Vector(-1, 0, 0),
     5: new Vector( 1, 0, 0)
-  },
-  cardinalDirectionMap: { // minecraft:cardinal_direction
-    north: new Vector( 0, 0,-1),
-    south: new Vector( 0, 0, 1),
-    west : new Vector(-1, 0, 0),
-    east : new Vector( 1, 0, 0)
   },
   pillarAxisMap: { // pillar_axis
     x_0: new Vector( 1, 0, 0),

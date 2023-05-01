@@ -1,27 +1,17 @@
 import { commandSyntaxError, contentLog, RawText, Server } from "@notbeer-api";
-import { BlockPermutation, BlockStates, Dimension, Vector3 } from "@minecraft/server";
+import { BlockPermutation, BlockStates } from "@minecraft/server";
 import { Token, Tokenizr, ParsingError } from "./extern/tokenizr.js";
 
-export interface parsedBlock {
-    id: string
+export type parsedBlock = {
+    id: string,
     states: Map<string, string|number|boolean>
 }
 
-export interface BlockUnit {
-  readonly typeId: string
-  readonly permutation: BlockPermutation
-  readonly location: Vector3
-  readonly dimension: Dimension
-  setPermutation(perm: BlockPermutation): void
-  hasTag(tag: string): boolean
-  isAir(): boolean
-}
-
 export interface AstNode {
-    prec: number
-    opCount: number
-    rightAssoc?: boolean
-    nodes: AstNode[]
+    prec: number,
+    opCount: number,
+    rightAssoc?: boolean,
+    nodes: AstNode[],
     token: Token
 }
 
@@ -30,8 +20,7 @@ const lexer = new Tokenizr();
   /*lexer.rule(/'(.*)'/, (ctx, match) => {
         ctx.accept('string', match[1]);
     });*/
-  // eslint-disable-next-line no-useless-escape
-  lexer.rule(/[~#%^=*+-/|:!&,@$\.]/, (ctx) => {
+  lexer.rule(/[~#%^=*+-/|:!&,@]/, (ctx) => {
     ctx.accept("misc");
   });
   lexer.rule(/\s+/, (ctx) => {

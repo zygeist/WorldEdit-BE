@@ -32,6 +32,7 @@ function ascend(builder: Player) {
     if (!dimension.getBlock(head).isAir()) invalid = true;
 
     if (!invalid) {
+      const rot = builder.getRotation();
       builder.teleport(new Vector(location.x + 0.5, legs.y, location.z + 0.5), { dimension });
       return RawText.translate("commands.wedit:thru.explain");
     }
