@@ -136,7 +136,7 @@ class ServerBuild extends ServerBuilder {
 
     let worldLoaded = false, tickCount = 0, prevTime = Date.now();
     const playerDimensions = new Map<string, string>();
-    const tickEvent = () => {
+    system.runInterval(() => {
       tickCount++;
       if (!this.runCommand("testfor @a").error && !worldLoaded) {
         /**
@@ -168,9 +168,7 @@ class ServerBuild extends ServerBuilder {
       });
 
       prevTime = Date.now();
-      system.run(tickEvent);
-    };
-    system.run(tickEvent);
+    });
 
     /**
      * Emit to 'playerSpawn' event listener
