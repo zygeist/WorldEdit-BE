@@ -1,4 +1,4 @@
-import { Vector3, Dimension, BlockPermutation } from "@minecraft/server";
+import { Vector3, Dimension, BlockPermutation, Block } from "@minecraft/server";
 import { Vector, regionVolume, Server, regionSize } from "@notbeer-api";
 import { assertCanBuildWithin, UnloadedChunksError } from "./assert.js";
 import { addTickingArea, canPlaceBlock, removeTickingArea } from "../util.js";
@@ -346,6 +346,7 @@ export interface BlockChanges {
 
 class BlockChangeImpl implements BlockChanges {
   readonly dimension: Dimension;
+  private blockCache = new Map<string, Block>();
   private iteration = new Map<string, BlockPermutation>();
   private changes = new Map<string, BlockPermutation>();
   private ranges: [Vector, Vector][] = [];
@@ -359,15 +360,18 @@ class BlockChangeImpl implements BlockChanges {
   }
 
   getBlockPerm(loc: Vector3) {
-    const change = this.changes.get(this.vec2string(loc));
+    const key = this.vec2string(loc);
+    const change = this.changes.get(key);
     try {
-      return change ?? this.dimension.getBlock(loc).permutation ?? air;
+      if (change) return change;
+      if (!this.blockCache.has(key)) this.blockCache.set(key, this.dimension.getBlock(loc));
+      return this.blockCache.get(key).permutation ?? air;
     } catch {
       return air;
     }
   }
 
-  getBlock(loc: Vector3) {
+  getBlock(loc: Vector3): BlockUnit {
     const perm = this.getBlockPerm(loc);
     return {
       typeId: perm.type.id,
@@ -396,6 +400,7 @@ class BlockChangeImpl implements BlockChanges {
   }
 
   applyIteration() {
+    if (!this.iteration.size) return;
     this.changes = new Map([...this.changes, ...this.iteration]);
     this.iteration.clear();
   }
@@ -405,6 +410,7 @@ class BlockChangeImpl implements BlockChanges {
   }
 
   *flush() {
+    this.applyIteration();
     for (const range of this.ranges) {
       this.history.addUndoStructure(this.record, ...range);
     }
@@ -413,7 +419,7 @@ class BlockChangeImpl implements BlockChanges {
     for (const [loc, block] of this.changes.entries()) {
       const vec = loc.split("_").map(v => Number.parseFloat(v));
       try {
-        this.dimension.getBlock({x: vec[0], y: vec[1], z: vec[2]}).setPermutation(block);
+        this.blockCache.get(loc).setPermutation(block);
       } catch { /* pass */ }
       yield ++i;
     }
