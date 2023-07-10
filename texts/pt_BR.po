@@ -449,8 +449,8 @@ msgid "commands.wedit:calc.description"
 msgstr "Evaluate a mathematical expression."
 
 msgid "commands.wedit:calc.invalid"
-msgstr "Chave:Comandos.editor:calc.inválido\n\n"
-"Este texto não tem informações de contexto. O texto é usado em en_US.po. Posição no arquivo: 128\n\n"
+msgstr "Chave:Comandos.editor:calc.inválido"
+"Este texto não tem informações de contexto. O texto é usado em en_US.po. Posição no arquivo: 128"
 "Msgid: comandos.editor:calc.inválido"
 
 msgid "commands.wedit:ceiling.description"
