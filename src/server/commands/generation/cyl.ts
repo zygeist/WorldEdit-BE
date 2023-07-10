@@ -14,6 +14,10 @@ const registerInformation = {
     }, {
       flag: "r"
     }, {
+      flag: "x"
+    }, {
+      flag: "z"
+    }, {
       name: "pattern",
       type: "Pattern"
     }, {
@@ -24,7 +28,7 @@ const registerInformation = {
           type: "float",
           range: [0.01, null] as [number, null]
         }, {
-          name: "height",
+          name: "length",
           type: "int",
           default: 1,
           range: [1, null] as [number, null]
@@ -42,7 +46,7 @@ const registerInformation = {
           type: "float",
           range: [0.01, null] as [number, null]
         }, {
-          name: "height",
+          name: "length",
           type: "int",
           default: 1,
           range: [1, null] as [number, null]
@@ -55,18 +59,26 @@ const registerInformation = {
 registerCommand(registerInformation, function* (session, builder, args) {
   const pattern: Pattern = args.get("pattern");
   let radii: [number, number];
-  const height: number = args.get("height");
+  const length: number = args.get("length");
   const isHollow = args.has("h");
   const isRaised = args.has("r");
+  let axis: number;
+
+  if (args.has("x"))
+    axis = 1;
+  else if (args.has("z"))
+    axis = 2;
+  else
+    axis = 0;
 
   if (args.has("_x"))
     radii = [args.get("radii"), args.get("radii")];
   else
     radii = [args.get("radiiX"), args.get("radiiZ")];
 
-  const loc = session.getPlacementPosition().offset(0, isRaised ? height/2 : 0, 0);
+  const loc = session.getPlacementPosition().offset(0, isRaised ? length/2 : 0, 0);
 
-  const cylShape = new CylinderShape(height, ...<[number, number]>radii);
+  const cylShape = new CylinderShape(axis, length, ...<[number, number]>radii);
   const job = Jobs.startJob(session, 2, cylShape.getRegion(loc));
   const count = yield* Jobs.perform(job, cylShape.generate(loc, pattern, null, session, {"hollow": isHollow}));
   Jobs.finishJob(job);

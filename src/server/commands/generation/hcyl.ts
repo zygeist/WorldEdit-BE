@@ -8,6 +8,11 @@ const registerInformation = {
   usage: [
     {
       flag: "r"
+    },
+    {
+      flag: "x"
+    }, {
+      flag: "z"
     }, {
       name: "pattern",
       type: "Pattern"
@@ -19,7 +24,7 @@ const registerInformation = {
           type: "float",
           range: [0.01, null] as [number, null]
         }, {
-          name: "height",
+          name: "length",
           type: "int",
           default: 1,
           range: [1, null] as [number, null]
@@ -37,7 +42,7 @@ const registerInformation = {
           type: "float",
           range: [0.01, null] as [number, null]
         }, {
-          name: "height",
+          name: "length",
           type: "int",
           default: 1,
           range: [1, null] as [number, null]
