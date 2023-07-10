@@ -99,7 +99,7 @@ export class Selection {
       const center = this._points[0];
       const vec = Vector.sub(this._points[1], this._points[0]);
       const height = Math.abs(vec.y) + 1;
-      return [new CylinderShape(height, Math.round(vec.mul([1, 0, 1]).length)), center.offset(0, height / 2, 0)];
+      return [new CylinderShape(0, height, Math.round(vec.mul([1, 0, 1]).length)), center.offset(0, height / 2, 0)];
     }
   }
 
