@@ -10,8 +10,10 @@ export type shapeGenOptions = {
     hollow?: boolean,
     wall?: boolean,
     recordHistory?: boolean,
-    ignoreGlobalMask?: boolean
-};
+    ignoreGlobalMask?: boolean,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [opt: string]: any
+  };
 
 export type shapeGenVars = {
     isSolidCuboid?: boolean,

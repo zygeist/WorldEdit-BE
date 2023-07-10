@@ -5,6 +5,7 @@ export class PyramidShape extends Shape {
   private size: number;
 
   protected customHollow = true;
+  protected inverted = true;
 
   constructor(size: number) {
     super();
