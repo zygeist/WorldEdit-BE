@@ -53,7 +53,7 @@ registerCommand(registerInformation, function* (session, builder, args) {
   const height: number = args.get("height") < 0 ? 4096 : (args.get("height") - 1) * 2 + 1;
   const origin = session.getPlacementPosition();
 
-  const shape = new CylinderShape(height, radius);
+  const shape = new CylinderShape(0, height, radius);
   const range = shape.getRegion(origin);
   const heightLimits = getWorldHeightLimits(dimension);
   range[0].y = Math.max(range[0].y, heightLimits[0]);

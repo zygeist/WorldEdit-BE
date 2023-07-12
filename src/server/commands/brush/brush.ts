@@ -60,6 +60,11 @@ const registerInformation = {
           name: "height",
           type: "int",
           default: 3
+        },
+        {
+          name: "axis",
+          type: "int",
+          default: 0
         }
       ]
     },
@@ -189,7 +194,8 @@ const cylinder_command = (session: PlayerSession, builder: Player, args: Map<str
     args.get("radius"),
     args.get("height"),
     args.get("pattern"),
-    args.has("h")
+    args.has("h"),
+    0
   ));
   return RawText.translate("commands.wedit:brush.bind.cylinder").with(args.get("radius")).with(args.get("height"));
 };

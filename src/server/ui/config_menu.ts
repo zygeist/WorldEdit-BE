@@ -364,6 +364,15 @@ Server.uiForms.register<ConfigContext>("$editTool_cylinder_brush", {
         (getToolProperty(ctx, player, "brush") as CylinderBrush).isHollow() :
         false
     },
+    $axis: {
+      type: "dropdown",
+      name: "%worldedit.config.axis",
+      options: ["X", "Y", "Z"],
+      default: (ctx, player) => {
+        if (ctx.getData("creatingTool")) return 0;
+        return (getToolProperty(ctx, player, "brush") as CylinderBrush).getAxis();
+      }
+    },
     ...usePickerInput
   },
   submit: (ctx, player, input) => {
@@ -372,7 +381,7 @@ Server.uiForms.register<ConfigContext>("$editTool_cylinder_brush", {
         return: "$editTool_cylinder_brush",
         onFinish: (ctx, _, mask, pattern) => {
           ctx.setData("toolData", [
-            new CylinderBrush(input.$size as number, input.$height as number, pattern, input.$hollow as boolean),
+            new CylinderBrush(input.$size as number, input.$height as number, pattern, input.$hollow as boolean, input.$axis as number),
             mask, null, null
           ]);
           finishToolEdit(ctx);
@@ -381,7 +390,7 @@ Server.uiForms.register<ConfigContext>("$editTool_cylinder_brush", {
       HotbarUI.goto("$pickPatternMask", player, ctx);
     } else {
       ctx.setData("toolData", [
-        new CylinderBrush(input.$size as number, input.$height as number, new Pattern(input.$pattern as string), input.$hollow as boolean),
+        new CylinderBrush(input.$size as number, input.$height as number, new Pattern(input.$pattern as string), input.$hollow as boolean, input.$axis as number),
         new Mask(input.$mask as string), null, null
       ]);
       finishToolEdit(ctx);
