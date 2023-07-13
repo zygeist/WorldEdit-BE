@@ -1,28 +1,28 @@
 {
 	"format_version": 2,
 	"header": {
-		"bp_name": "WorldEdit Bedrock Edition",
-		"rp_name": "WorldEdit Bedrock Edition [RES]",
+		"bp_name": "WorldEdit BE",
+		"rp_name": "WorldEdit BE [RES]",
 		
         "description": "pack.description",
 		
-        "bp_uuid": "3cdb2ddf-662e-4f8f-a0a1-1293b91ccb2f",
-		"rp_uuid": "e304a4eb-f0a0-4979-ac17-7b0f46a555c8",
-        "version": [0, 8, 1],
+        "bp_uuid": "60e3be5f-fb2a-44e4-a87c-b85b63a77bec",
+		"rp_uuid": "f682dd49-cc85-406e-a492-98a7c2f7c83a",
+        "version": [0, 8, 1, 1],
 		"min_engine_version": [ 1, 20, 10 ]
 	},
 	"bp_modules": [
 		{
 			"description": "item and entity definitions",
 			"type": "data",
-			"uuid": "f0bc63f7-f2b2-4de2-a27c-6a3d5ac7cee4",
+			"uuid": "bdcd6ace-06cd-43e6-a08b-e52d0e4dca99",
 			"version": [ 1, 0, 0 ]
 		},
 		{
 			"description": "scripts",
 			"type": "script",
 			"language": "javascript",
-			"uuid": "7f97c5a5-a9ec-4773-b29f-a26e0f653ee2",
+			"uuid": "5a007802-4fa8-48d3-8913-62958ecce7ad",
 			"version": [ 1, 0, 0 ],
 			"entry": "scripts/server/index.js"
 		}
@@ -31,7 +31,7 @@
     "rp_modules": [
 		{
 			"type": "resources",
-			"uuid": "f58139e1-2378-434d-91e8-9861d5579c7c",
+			"uuid": "587250b6-b919-4ee3-b6ef-26dd1a67e29a",
 			"version": [ 1, 0, 0 ]
 		}
 	],
@@ -53,7 +53,9 @@
 	],
 	"metadata": {
 		"authors": [
-			"SIsilicon"
+			"SIsilicon",
+			"CrackedMatter",
+			"zygh0st"
 		],
 		"license": "GPL-3.0-or-later"
 	}
