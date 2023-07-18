@@ -15,7 +15,8 @@ const registerInformation = {
       name: "pattern",
       type: "Pattern"
     }
-  ]
+  ],
+  aliases: ["fill"]
 };
 
 /**
