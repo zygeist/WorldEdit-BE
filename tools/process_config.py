@@ -91,7 +91,13 @@ with open('mc_manifest.json', 'r') as file:
     if type(version) is str:
         version_str = version
     else:
-        version_str = '.'.join(map(str, version)) + (' [BETA]' if len(version) > 3 else '')\
+        if (len(version) > 3 and len(version) <= 5):
+            version_str = '.'.join(map(str, version)) + ' [BETA]'
+        elif (len(version) > 5):
+            version_str = '.'.join(map(str, version)) + ' [ALPHA]'
+        else:
+            version_str = '.'.join(map(str, version))
+        
 
 # Generate src/config.ts
 if args.generateConfigTS:

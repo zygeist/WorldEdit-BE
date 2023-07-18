@@ -57,7 +57,10 @@ bp_manifest['header']['name'] += ' ' + '.'.join(map(str, version))
 rp_manifest['header']['name'] += ' ' + '.'.join(map(str, version))
 
 if not type(version) is str:
-    version = version[:3]
+    if (len(version) <= 5):
+        version = version[:3]
+    elif (len(version) == 7 and version[0] == '0'):
+        version = version[2:]
 bp_manifest['header']['version'] = version
 rp_manifest['header']['version'] = version
 
