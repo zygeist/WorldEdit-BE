@@ -7,10 +7,12 @@ import { fluidLookPositions, lavaMatch } from "./drain.js";
 import { floodFill } from "./floodfill_func.js";
 
 const registerInformation = {
-  name: "fixlava",
-  permission: "worldedit.utility.fixlava",
-  description: "commands.wedit:fixlava.description",
+  name: "gravel",
+  permission: "worldedit.utility.gravel",
+  description: "commands.wedit:gravel.description",
   usage: [
+    { flag: "c"
+    },
     {
       name: "radius",
       type: "float"
@@ -23,23 +25,23 @@ registerCommand(registerInformation, function* (session, builder, args) {
 
   const dimension = builder.dimension;
   const playerBlock = session.getPlacementPosition();
-  let fixlavaStart: Vector;
+  let gravelStart: Vector;
   for (const offset of fluidLookPositions) {
     const loc = playerBlock.offset(offset.x, offset.y, offset.z);
     const block = dimension.getBlock(loc);
     if (block.typeId.match(lavaMatch)) {
-      fixlavaStart = loc;
+      gravelStart = loc;
       break;
     }
   }
 
-  if (!fixlavaStart) {
-    throw "commands.wedit:fixlava.noLava";
+  if (!gravelStart) {
+    throw "commands.wedit:gravel.noGravel";
   }
 
-  const job = Jobs.startJob(session, 1, new SphereShape(args.get("radius")).getRegion(fixlavaStart));
-  Jobs.nextStep(job, "Calculating and Fixing lava...");
-  const blocks = yield* floodFill(fixlavaStart, args.get("radius"), (ctx, dir) => {
+  const job = Jobs.startJob(session, 1, new SphereShape(args.get("radius")).getRegion(gravelStart));
+  Jobs.nextStep(job, "Calculating and replacing gravel...");
+  const blocks = yield* floodFill(gravelStart, args.get("radius"), (ctx, dir) => {
     const block = dimension.getBlock(ctx.worldPos.offset(dir.x, dir.y, dir.z));
     if (!block.typeId.match(lavaMatch)) return false;
     return true;
@@ -50,7 +52,7 @@ registerCommand(registerInformation, function* (session, builder, args) {
 
     const history = session.getHistory();
     const record = history.record();
-    const lava = BlockPermutation.resolve("minecraft:lava");
+    const lava = BlockPermutation.resolve("minecraft:gravel");
     try {
       history.addUndoStructure(record, min, max, blocks);
       let i = 0;
