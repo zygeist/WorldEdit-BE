@@ -40,11 +40,15 @@ registerCommand(registerInformation, function* (session, builder, args) {
   let blockCount = 0;
   const rotation = new Vector(args.get("rotateX"), args.get("rotate"), args.get("rotateZ"));
   function assertValidFastArgs () {
-    if ((Math.abs(rotation.y) / 90) % 1 != 0) {
+    if (Math.abs(rotation.y) != 0 && (Math.abs(rotation.y) / 90) % 1 != 0) {
       throw RawText.translate("commands.wedit:rotate.notNinety").with(args.get("rotate"));
-    } else if (rotation.x || rotation.z) {
+    } else if (Math.abs(rotation.x) != 0 && (Math.abs(rotation.x) / 90) % 1 != 0) {
+      throw RawText.translate("commands.wedit:rotate.notNinety").with(args.get("rotateX"));
+    } else if (Math.abs(rotation.z) != 0 && (Math.abs(rotation.z) / 90) % 1 != 0) {
+      throw RawText.translate("commands.wedit:rotate.notNinety").with(args.get("rotateZ"));
+    }/* else if (rotation.x || rotation.z) {
       throw RawText.translate("commands.wedit:rotate.yOnly");
-    }
+    }*/
   }
 
   if (args.has("w")) {
@@ -59,9 +63,18 @@ registerCommand(registerInformation, function* (session, builder, args) {
     if (!session.clipboard.isAccurate) assertValidFastArgs();
 
     if (!args.has("o")) {
-      session.clipboardTransform.relative = session.clipboardTransform.relative.rotateY(args.get("rotate"));
-    }
+      if (Math.abs(rotation.y) != 0) {
+        session.clipboardTransform.relative = session.clipboardTransform.relative.rotateY(args.get("rotate"));
+      }
+      if (Math.abs(rotation.x) != 0) {
+        session.clipboardTransform.relative = session.clipboardTransform.relative.rotateX(args.get("rotateX"));
+      }
+      if (Math.abs(rotation.z) != 0) {
+        session.clipboardTransform.relative = session.clipboardTransform.relative.rotateZ(args.get("rotateZ"));
+      }
+    } //else {
     session.clipboardTransform.rotation = session.clipboardTransform.rotation.add(rotation);
+    //}
     blockCount = session.clipboard.getBlockCount();
   }
 
