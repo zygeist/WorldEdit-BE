@@ -6,23 +6,23 @@
 		
         "description": "pack.description",
 		
-        "bp_uuid": "bb9035cd-8ec9-4fbf-8df1-3bde9c2a3705",
-		"rp_uuid": "b8ca2b41-74b1-44ff-8806-c79cb14d44fd",
-        "version": [0, 8, 1, 8],
+        "bp_uuid": "25cdf8a8-fc9a-44a1-99d5-887fbaf756eb",
+		"rp_uuid": "641d3766-8e2b-4019-84f3-6418da288cce",
+        "version": [0, 8, 1, 9],
 		"min_engine_version": [ 1, 20, 10 ]
 	},
 	"bp_modules": [
 		{
 			"description": "item and entity definitions",
 			"type": "data",
-			"uuid": "90c8c86b-e219-45f2-92bb-152f06e888e9",
+			"uuid": "4dc21e6c-656d-4303-bff0-809f319deb92",
 			"version": [ 1, 0, 0 ]
 		},
 		{
 			"description": "scripts",
 			"type": "script",
 			"language": "javascript",
-			"uuid": "cba130c8-5475-4625-86b6-310f6aaaed7d",
+			"uuid": "41bc5578-9dc5-4d11-96a4-f137d7e4331c",
 			"version": [ 1, 0, 0 ],
 			"entry": "scripts/server/index.js"
 		}
@@ -31,7 +31,7 @@
     "rp_modules": [
 		{
 			"type": "resources",
-			"uuid": "7af18591-6ff1-4206-8ff7-89d3b4a854de",
+			"uuid": "158062ba-02f3-44d6-aa5b-b02c4d968756",
 			"version": [ 1, 0, 0 ]
 		}
 	],
